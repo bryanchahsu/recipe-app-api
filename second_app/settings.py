@@ -25,9 +25,21 @@ SECRET_KEY = 'django-insecure-)2c2!aovy%(+i1+o8nf$%)@&omn!t%6vy-8#nj9p6_a9b_$3n4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
+
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = ['*']
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+
+#THIS REMOVES ALL AUTHENTICATION FOR THE APP, BUT MY VIEWS MAY OVERWRITE IT
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+}
 
 
 # Application definition
@@ -40,9 +52,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'core',
     'user',
-    'recipe'
+    'recipe',
+    'customer',
+    'order',
+    'product',
+
 ]
 
 MIDDLEWARE = [
@@ -53,6 +70,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'second_app.urls'
@@ -128,3 +147,5 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'core.User'
+# AUTH_USER_MODEL = 'your_app.CustomUser'
+
