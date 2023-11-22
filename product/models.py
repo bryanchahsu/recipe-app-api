@@ -8,5 +8,7 @@ class Product(models.Model):
     quantity = models.PositiveIntegerField(blank=True, null=True)  # Make it optional
     cost = models.DecimalField(max_digits=10, decimal_places=2)
 
+    image = models.ImageField(upload_to='product_images/', null=True, blank=True)  # Image field with null=True
+
     def __str__(self):
         return self.title

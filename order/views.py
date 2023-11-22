@@ -25,3 +25,29 @@ class OrderListView(APIView):
 
         # Return serialized orders as a JSON response
         return Response({"orders": serializer.data})
+    
+
+    # views.py
+
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
+from .models import Order
+from .serializers import OrderSerializer
+from rest_framework.permissions import IsAuthenticated  # Import the permission class
+
+
+class OrderDetailView(generics.RetrieveAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+class OrderCreateView(generics.CreateAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can create orders
+ 
+
+class OrderUpdateView(generics.UpdateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+class OrderDeleteView(generics.DestroyAPIView):
+    queryset = Order.objects.all()

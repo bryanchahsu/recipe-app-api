@@ -207,5 +207,245 @@ def test_order_list_view(self):
     # Check if the response data matches the expected data
     self.assertEqual(response.data, {"orders": expected_data})
 
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+
+class OrderDetailViewTestCase(TestCase):
+    def setUp(self):
+        # Create a test order and related items
+        self.customer = Customer.objects.create(name="Test Customer")
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+        self.client = APIClient()
+
+    def test_order_detail_view(self):
+        # Initialize the API client
+        url = reverse('order-detail', args=[self.order.id])  # Generate the URL for the specific order
+
+        # Make a GET request to the order detail view
+        response = self.client.get(url)
+
+        # Check the response status code
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check if the response data matches the expected order data
+        self.assertEqual(response.data['id'], self.order.id)
+        self.assertEqual(response.data['order_date'], self.order.order_date)
+        # ... add more assertions for other order fields.
+
+        # Check item information
+        self.assertIn('items', response.data)
+        self.assertEqual(len(response.data['items']), 1)  # Assuming there is only one item in this order
+        self.assertEqual(response.data['items'][0]['product'], self.product.id)
+        self.assertEqual(response.data['items'][0]['quantity'], self.order_item.quantity)
+
+    def test_nonexistent_order_detail_view(self):
+        # Attempt to fetch the details of a non-existent order
+        url = reverse('order-detail', args=[999])  # Use a non-existent ID
+        response = self.client.get(url)
+
+        # Check that the response status code is 404 (Not Found)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # def test_unauthorized_access(self):
+    #     # Create a user without necessary permissions (e.g., using Django's User model)
+    #     user = User.objects.create_user(username='testuser', password='testpassword')
+
+    #     # Log in the user using the client (you may need to adjust your authentication settings)
+    #     self.client.login(username='testuser', password='testpassword')
+
+    #     # Attempt to access the order detail view
+    #     url = reverse('order-detail', args=[self.order.id])
+    #     response = self.client.get(url)
+
+    #     # Check that the response status code is 403 (Forbidden) or 401 (Unauthorized) based on your authentication settings
+    #     self.assertIn(response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED])
+
+    def test_post_not_allowed(self):
+        # Attempt to make a POST request to the order detail view (should not be allowed)
+        url = reverse('order-detail', args=[self.order.id])
+        response = self.client.post(url)
+
+        # Check that the response status code is 405 (Method Not Allowed)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_put_not_allowed(self):
+        # Attempt to make a PUT request to the order detail view (should not be allowed)
+        url = reverse('order-detail', args=[self.order.id])
+        response = self.client.put(url)
+
+        # Check that the response status code is 405 (Method Not Allowed)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from .models import Order, Tag, Customer  # Import your Order model and related models
+from .serializers import OrderSerializer  # Import your OrderSerializer
+
+class OrderCreateViewTestCase(TestCase):
+    def setUp(self):
+        # Create a test user with appropriate permissions using the custom user model
+        User = get_user_model()
+        self.user = User.objects.create_user(email='testuser@example.com', password='testpassword', name='Test User')
+
+        # Create a test customer
+        self.customer = Customer.objects.create(name='Test Customer')
+
+        # Create a test tag
+        self.tag = Tag.objects.create(name='Test Tag')
+
+        # Initialize the API client
+        self.client = APIClient()
+
+        # Log in the user using the client
+        self.client.force_authenticate(user=self.user)  # Correct way to authenticate the user
+
+        # Define the data for creating an order
+        self.order_data = {
+            'customer': self.customer.id,  # Use the ID of the created customer
+            'order_date': '2023-11-22T04:10:29Z',
+            'fulfillment_status': 'Pending',
+            'tags': [self.tag.id],  # Use the ID of the created tag in a list
+            'total': '500.00',
+        }
+
+        #TEST OLD DATA WITHOUT CREATING A TAG OR CUSTOMER 
+        # self.order_data = {
+        #     'customer': 1,
+        #     'order_date': '2023-11-22T04:10:29Z',
+        #     'fulfillment_status': 'Pending',
+        #     'tags': [1],  # Replace with valid tag IDs,
+        #     'total': '500.00',
+
+        # }
+
+
+    # ... rest of your test methods
+    
+
+    def test_create_order(self):
+        # Generate the URL for creating a new order
+        url = reverse('order-create')
+
+        # Make a POST request to create a new order
+        response = self.client.post(url, self.order_data, format='json')
+        print(response.content)
+
+
+        # Check the response status code (should be 201 Created)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check if the order was created in the database (you may need to adjust this based on your model)
+        self.assertTrue(Order.objects.filter(order_date='2023-11-22T04:10:29Z').exists())
+
+        # Add more assertions as needed to verify the created order's attributes
+
+    def test_create_order_invalid_data(self):
+        # Generate the URL for creating a new order
+        url = reverse('order-create')
+
+        # Provide invalid data (e.g., missing required fields)
+        invalid_order_data = {
+            'order_date': '2023-11-22T04:10:29Z',
+        }
+
+        # Make a POST request with invalid data to create a new order
+        response = self.client.post(url, invalid_order_data, format='json')
+
+        # Check the response status code (should be 400 Bad Request or another appropriate error status code)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Add more test methods for other scenarios and edge cases as needed
+
+    # ...
+
+    
+
+    def test_update_order(self):
+        # Create an order to be updated
+        order = Order.objects.create(
+            customer=self.customer,
+            order_date='2023-11-22T04:10:29Z',
+            fulfillment_status='Pending',
+            total='500.00',
+        )
+
+        # Define updated data
+        updated_data = {
+            'customer': self.customer.id,  # Use the ID of the created customer
+            'order_date': '2023-11-23T05:20:30Z',
+            'fulfillment_status': 'Shipped',
+            'tags': [self.tag.id],  # Use the ID of the created tag in a list
+            'total': '600.00',
+        }
+
+        # Generate the URL for updating the order
+        url = reverse('order-update', args=[order.id])
+
+        # Make a PUT request to update the order
+        response = self.client.put(url, updated_data, format='json')
+
+        # Check the response status code (should be 200 OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check if the order was updated in the database
+        updated_order = Order.objects.get(id=order.id)
+        expected_datetime = updated_order.order_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.assertEqual(expected_datetime, '2023-11-23T05:20:30Z')
+
+        self.assertEqual(updated_order.fulfillment_status, 'Shipped')
+        # Add more assertions as needed to verify other updated attributes
+
+    def test_delete_order(self):
+        # Create an order to be deleted
+        order = Order.objects.create(
+            customer=self.customer,
+            order_date='2023-11-22T04:10:29Z',
+            fulfillment_status='Pending',
+            total='500.00',
+        )
+        updated_data = {
+            'customer': self.customer.id,  # Use the ID of the created customer
+            'order_date': '2023-11-23T05:20:30Z',
+            'fulfillment_status': 'Shipped',
+            'tags': [self.tag.id],  # Use the ID of the created tag in a list
+            'total': '600.00',
+        }
+
+        # Generate the URL for deleting the order
+        url = reverse('order-delete', args=[order.id])
+
+        # Make a DELETE request to delete the order
+        # response = self.client.delete(url)
+        response = self.client.delete(url, format='json')
+
+
+        # Check the response status code (should be 204 No Content for successful deletion)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        print(response.status_code)
+
+        # Check if the order was deleted from the database
+        self.assertFalse(Order.objects.filter(id=order.id).exists())

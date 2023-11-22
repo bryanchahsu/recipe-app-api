@@ -38,3 +38,23 @@ class CustomerModelTest(TestCase):
 
         # For example, if you have a custom method in your Customer model:
         # self.assertEqual(customer.some_custom_method(), expected_value)
+
+class CustomerViewTest(TestCase):
+
+    print('test for customer list page api')
+
+
+class CustomerDetailTest(TestCase):
+    print("test for creating detail page")
+
+
+class CustomerCreateTest(TestCase):
+    print("test for creating a new customer")
+
+
+class CustomerUpdateTest(TestCase):
+    print("test for creating a update existing customer")
+
+
+class CustomerDeleteTest(TestCase):
+    print("delete an existing customer")
