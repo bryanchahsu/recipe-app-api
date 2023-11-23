@@ -50,7 +50,7 @@ class CustomerListView(APIView):
         # Return serialized customer data as a JSON response
         return Response({"customers": serializer.data})
     
-    
+
 
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
@@ -58,14 +58,19 @@ from rest_framework.response import Response
 from .models import Customer
 from .serializers import CustomerSerializer
 from django.db.models import Sum
+from rest_framework import generics
 
 class CustomerDetailView(APIView):
     def get(self, request, customer_id, *args, **kwargs):
-        # Retrieve the customer with the specified ID or return a 404 error
-        customer = get_object_or_404(Customer, pk=customer_id)
+        try:
+            # Retrieve the customer from the database based on the customer_id
+            customer = Customer.objects.get(pk=customer_id)
+        except Customer.DoesNotExist:
+            # If the customer doesn't exist, return a 404 response
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Get all orders related to the current customer
-        orders = customer.order_set.all()  # Assuming you have a related name 'order_set' in your Customer model
+        orders = customer.order_set.all()
 
         # Calculate the total number of orders for the customer
         total_orders = orders.count()
@@ -89,3 +94,33 @@ class CustomerDetailView(APIView):
 
         # Return serialized customer data as a JSON response
         return Response(serializer.data)
+    
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Customer
+from .serializers import CustomerSerializer
+from django.shortcuts import get_object_or_404
+
+class CustomerUpdateView(APIView):
+    def put(self, request, customer_id):
+        # Retrieve the customer object by its ID
+        customer = get_object_or_404(Customer, pk=customer_id)
+        
+        # Serialize the customer data based on the request data
+        serializer = CustomerSerializer(customer, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+from rest_framework.generics import DestroyAPIView
+from .models import Customer
+from .serializers import CustomerSerializer
+
+class CustomerDeleteView(DestroyAPIView):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer

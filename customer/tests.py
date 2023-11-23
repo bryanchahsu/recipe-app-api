@@ -200,4 +200,126 @@ class CustomerListViewTest(TestCase):
 
 
 class CustomerDetailViewTest(TestCase):
-    print("test")
+    def setUp(self):
+
+        # Create some customers
+        self.customer1 = Customer.objects.create(name="Customer 1", email="customer1@example.com", phone="1234567890")
+        self.customer2 = Customer.objects.create(name="Customer 2", email="customer2@example.com", phone="9876543210")
+        self.customer = Customer.objects.create(name="Customer ", email="customer@example.com", phone="1234567890")
+
+
+        # Create products with cost values
+        self.product1 = Product.objects.create(cost=Decimal('5.00'), price=Decimal('10.00'))
+        self.product2 = Product.objects.create(cost=Decimal('10.00'), price=Decimal('20.00'))
+
+        # Create orders for customers with valid order_date values
+        self.order1 = Order.objects.create(customer=self.customer, order_date=timezone.now().isoformat(), total=Decimal('100.00'))
+        self.order2 = Order.objects.create(customer=self.customer1, order_date=timezone.now().isoformat(), total=Decimal('50.00'))
+        self.order3 = Order.objects.create(customer=self.customer2, order_date=timezone.now().isoformat(), total=Decimal('75.00'))
+
+        # Create order items with quantities
+        self.order_item1 = OrderItem.objects.create(order=self.order1, quantity=5, product=self.product1)
+        self.order_item2 = OrderItem.objects.create(order=self.order1, quantity=2, product=self.product2)
+        self.order_item3 = OrderItem.objects.create(order=self.order2, quantity=3, product=self.product1)
+        self.order_item4 = OrderItem.objects.create(order=self.order3, quantity=4, product=self.product2)
+
+
+
+
+        # Create products with cost values
+        self.product1 = Product.objects.create(cost=Decimal('5.00'), price=Decimal('10.00'))
+        self.product2 = Product.objects.create(cost=Decimal('10.00'), price=Decimal('20.00'))
+
+        # Create an order for the customer with a valid order_date value
+        self.order = Order.objects.create(customer=self.customer, order_date=timezone.now(), total=Decimal('100.00'))
+
+        # Create order items with quantities
+        self.order_item1 = OrderItem.objects.create(order=self.order, quantity=5, product=self.product1)
+        self.order_item2 = OrderItem.objects.create(order=self.order, quantity=2, product=self.product2)
+
+
+
+    def test_customer_detail_api(self):
+        # Calculate the expected total quantity and total price for the customer
+        expected_total_order = 2
+        expected_total_price = Decimal('200')
+
+        # Create an API client
+        client = APIClient()
+
+        # Get the URL for the customer detail view, passing the customer_id as a parameter
+        url = reverse('customer-detail', args=[self.customer.id])
+        
+        # Make a GET request to the customer detail API endpoint
+        response = client.get(url)
+
+        # Check if the response status code is HTTP 200 OK
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check the response data
+        data = response.json()
+        # print(data)
+        # Check customer data in the response
+        self.assertEqual(data['id'], self.customer.id)
+        self.assertEqual(data['name'], self.customer.name)
+        self.assertEqual(data['email'], self.customer.email)
+        self.assertEqual(data['total_orders'], expected_total_order)
+        self.assertEqual(Decimal(data['total_amount_spent']), expected_total_price)
+
+
+from rest_framework import status
+from rest_framework.test import APITestCase
+from .models import Customer
+from django.urls import reverse
+
+class CustomerUpdateViewTest(APITestCase):
+    def setUp(self):
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer", email="test@example.com")
+
+    def test_update_customer(self):
+        # Get the URL for the customer update view
+        url = reverse('customer-update', args=[self.customer.id])
+
+        # Define the new data for the customer
+        new_data = {
+            'name': 'Updated Name',
+            'email': 'updated@example.com',
+        }
+
+        # Make a PUT request to the customer update API endpoint with the new data
+        response = self.client.put(url, new_data, format='json')
+
+        # Check if the response status code is HTTP 200 OK (indicating successful update)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Retrieve the customer from the database to check if the data was updated
+        updated_customer = Customer.objects.get(id=self.customer.id)
+
+        # Check if the customer's data has been updated correctly
+        self.assertEqual(updated_customer.name, new_data['name'])
+        self.assertEqual(updated_customer.email, new_data['email'])
+        
+from rest_framework import status
+from rest_framework.test import APITestCase
+from .models import Customer
+from django.urls import reverse
+
+class CustomerDeleteViewTest(APITestCase):
+    def setUp(self):
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer", email="test@example.com")
+
+    def test_delete_customer(self):
+        # Get the URL for the customer delete view
+        url = reverse('customer-delete', args=[self.customer.id])
+
+        # Make a DELETE request to the customer delete API endpoint
+        response = self.client.delete(url)
+
+        # Check if the response status code is HTTP 204 No Content (indicating successful deletion)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Try to retrieve the deleted customer from the database
+        with self.assertRaises(Customer.DoesNotExist):
+            deleted_customer = Customer.objects.get(id=self.customer.id)
