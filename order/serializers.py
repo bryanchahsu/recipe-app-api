@@ -15,3 +15,20 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
+
+
+
+# serializers.py
+from rest_framework import serializers
+from .models import Order
+from django.db import models
+
+class OrderListSerializer(serializers.ModelSerializer):
+    total_quantity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'customer', 'order_date', 'fulfillment_status', 'tags', 'total', 'total_quantity']
+
+    def get_total_quantity(self, obj):
+        return obj.items.aggregate(total_quantity=models.Sum('quantity'))['total_quantity']

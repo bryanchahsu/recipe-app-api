@@ -1,3 +1,5 @@
+
+
 from django.test import TestCase
 from order.models import Order
 from product.models import Product
@@ -81,6 +83,69 @@ def test_order_creation(self):
     self.assertEqual(order.items.count(), 2)
     self.assertEqual(order.items.get(product=self.product1).quantity, 3)
     self.assertEqual(order.items.get(product=self.product2).quantity, 2)
+
+
+
+# Order List API Test- aggregate on quantity
+
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+from .models import Order, OrderItem
+from customer.models import Customer
+from product.models import Product
+
+class OrderListAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer")
+
+        # Create a product
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with an order item
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+    def test_order_list_api(self):
+        url = reverse('order-list')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check if the JSON response contains the orders and total_quantity
+        self.assertEqual(len(response.data), 1)  # Assuming you have 1 order in the setup
+        self.assertEqual(response.data[0]['id'], self.order.id)
+        self.assertEqual(response.data[0]['total_quantity'], 10)  # Since you specified a quantity of 5 in the order item
+        self.assertEqual(response.data[0]['total'], "500.00")  # Since you specified a quantity of 5 in the order item
+
+
+
 
 
 from django.test import TestCase
