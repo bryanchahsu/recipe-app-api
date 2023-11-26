@@ -1,4 +1,289 @@
+# from django.test import TestCase
+# from rest_framework.test import APIClient
+# from rest_framework import status
+# from django.urls import reverse
+# from .models import Order, OrderItem
+# from customer.models import Customer
+# from product.models import Product
+# from datetime import datetime
+# from decimal import Decimal
 
+# class OrderListAPIViewTestCase(TestCase):
+#     def setUp(self):
+#         # Create test data for orders and items
+#         customer = Customer.objects.create(name="Test Customer")
+#         product1 = Product.objects.create(title="Product 1", price=10.0, cost=5.0)
+#         product2 = Product.objects.create(title="Product 2", price=15.0, cost=7.5)
+
+#         order1 = Order.objects.create(
+#             customer=customer,
+#             order_date=datetime(2023, 11, 19, 4, 10, 29),
+#             fulfillment_status="Fulfilled",
+#             total=Decimal("9000.00"),
+#         )
+#         order2 = Order.objects.create(
+#             customer=customer,
+#             order_date=datetime(2023, 11, 20, 4, 10, 29),
+#             fulfillment_status="Processing",
+#             total=Decimal("7500.00"),
+#         )
+#         OrderItem.objects.create(order=order1, product=product1, quantity=2)
+#         OrderItem.objects.create(order=order2, product=product2, quantity=3)
+
+#     def test_order_list_api_view_with_filtering(self):
+#         # Initialize the API client
+#         client = APIClient()
+#         url = reverse('order-list')  # Make sure this matches your URL name
+
+#         # Make a GET request to the order list API view with filtering
+#         response = client.get(url, {'order_date__gte': '2023-11-20'})
+
+#         # Check the response status code
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+#         # Define the expected data based on the test data you created in setUp
+#         expected_data = [
+#             {
+#                 'id': 2,
+#                 'order_date': '2023-11-20T04:10:29Z',
+#                 'fulfillment_status': 'Processing',
+#                 'total': '7500.00',
+#                 'customer': 1,
+#                 'tags': [],
+#                 'items': [
+#                     {
+#                         'id': 2,
+#                         'product': 2,
+#                         'quantity': 3,
+#                     }
+#                 ],
+#             },
+#         ]
+
+#         # Check if the response data matches the expected data
+#         self.assertEqual(response.data, {'orders': expected_data})
+
+#     def test_order_list_api_view_with_sorting(self):
+#         # Initialize the API client
+#         client = APIClient()
+#         url = reverse('order-list')
+#         response = self.client.get(url, {'ordering': '-order_date'})  # Sort by order_date in descending order
+
+#         print('reponse:::')
+#         print(response.data)
+#         print(response.content)
+
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+#         # Define the expected data based on the test data you created in setUp
+#         expected_data = [
+#             {
+#                 'id': 2,
+#                 'order_date': '2023-11-20T04:10:29Z',
+#                 'fulfillment_status': 'Processing',
+#                 'total': '7500.00',
+#                 'customer': 1,
+#                 'tags': [],
+#                 'items': [
+#                     {
+#                         'id': 2,
+#                         'product': 2,
+#                         'quantity': 3,
+#                     }
+#                 ],
+#             },
+#             {
+#                 'id': 1,
+#                 'order_date': '2023-11-19T04:10:29Z',
+#                 'fulfillment_status': 'Fulfilled',
+#                 'total': '9000.00',
+#                 'customer': 1,
+#                 'tags': [],
+#                 'items': [
+#                     {
+#                         'id': 1,
+#                         'product': 1,
+#                         'quantity': 2,
+#                     }
+#                 ],
+#             },
+#         ]
+
+#         # Check if the response data matches the expected data
+#         self.assertEqual(response.data, {'orders': expected_data})
+
+
+
+#Test for Sort, Filter, etc
+
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from datetime import datetime
+from django.urls import reverse
+from .models import Order
+from .serializers import OrderSerializer, OrderListSerializer
+
+class OrderAPITestCase(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer")
+
+        # Create a product
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with order items
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        # Create four additional sample orders with order items
+        for i in range(2, 6):  # Create 4 additional orders
+            order_date = datetime(2023, 11, i, 12, 0, 0)
+            order = Order.objects.create(
+                customer=self.customer,
+                order_date=order_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                fulfillment_status="Shipped" if i % 2 == 0 else "Delivered",
+                total=f"{i * 100.00}",
+            )
+            OrderItem.objects.create(
+                order=order,
+                product=self.product,
+                quantity=i,  # Specify the quantity of this product in the order
+            )
+
+    def test_date_filtering(self):
+        # Test filtering orders by date range
+        start_date = "2023-11-02"
+        end_date = "2023-11-04"
+        response = self.client.get(reverse("order-list"), {"order_date__gte": start_date, "order_date__lte": end_date})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        filtered_orders = Order.objects.filter(order_date__gte=start_date, order_date__lte=end_date)
+        serializer = OrderListSerializer(filtered_orders, many=True)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_sorting(self):
+        # Test sorting orders by order_date in descending order
+        response = self.client.get(reverse("order-list"), {"ordering": "-order_date"})
+
+                # Debugging statements
+        print("Response Content:")
+        print(response.content)
+        print("Response Status Code:", response.status_code)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sorted_orders = Order.objects.order_by("-order_date")
+        serializer = OrderListSerializer(sorted_orders, many=True)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_invalid_date_filtering(self):
+        # Test filtering with invalid date format (should return an empty list)
+        response = self.client.get(reverse("order-list"), {"order_date__gte": "invalid_date"})
+        print("response")
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # def test_invalid_sorting_field(self):
+    #     # Test sorting by an invalid field (should return a bad request status)
+    #     response = self.client.get(reverse("order-list"), {"ordering": "invalid_field_name"})
+    #     print("reponse:")
+    #     print(response.content)
+    #     print(response.data)
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+
+
+# Order List API Test- aggregate on quantity
+
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+from .models import Order, OrderItem
+from customer.models import Customer
+from product.models import Product
+
+class OrderListAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer")
+
+        # Create a product
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with an order item
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+
+    def test_order_list_api(self):
+        url = reverse('order-list')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check if the JSON response contains the orders and total_quantity
+        self.assertEqual(len(response.data), 1)  # Assuming you have 1 order in the setup
+        self.assertEqual(response.data[0]['id'], self.order.id)
+        self.assertEqual(response.data[0]['total_quantity'], 10)  # Since you specified a quantity of 5 in the order item
+        self.assertEqual(response.data[0]['total'], "500.00")  # Since you specified a quantity of 5 in the order item
+
+
+
+
+
+## Order Model Testing Only
 
 from django.test import TestCase
 from order.models import Order
@@ -85,64 +370,6 @@ def test_order_creation(self):
     self.assertEqual(order.items.get(product=self.product2).quantity, 2)
 
 
-
-# Order List API Test- aggregate on quantity
-
-from django.test import TestCase
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
-from .models import Order, OrderItem
-from customer.models import Customer
-from product.models import Product
-
-class OrderListAPITest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-        # Create a customer
-        self.customer = Customer.objects.create(name="Test Customer")
-
-        # Create a product
-        self.product = Product.objects.create(
-            title="Test Product",
-            description="Product description",
-            price=10.0,
-            sku="SKU123",
-            quantity=100,
-            cost=5.0,
-        )
-
-        # Create an order with an order item
-        self.order = Order.objects.create(
-            customer=self.customer,
-            order_date="2023-11-21T04:10:29Z",
-            fulfillment_status="Pending",
-            total="500.00",
-        )
-
-        self.order_item = OrderItem.objects.create(
-            order=self.order,
-            product=self.product,
-            quantity=5,  # Specify the quantity of this product in the order
-        )
-        self.order_item1 = OrderItem.objects.create(
-            order=self.order,
-            product=self.product,
-            quantity=5,  # Specify the quantity of this product in the order
-        )
-
-    def test_order_list_api(self):
-        url = reverse('order-list')
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        # Check if the JSON response contains the orders and total_quantity
-        self.assertEqual(len(response.data), 1)  # Assuming you have 1 order in the setup
-        self.assertEqual(response.data[0]['id'], self.order.id)
-        self.assertEqual(response.data[0]['total_quantity'], 10)  # Since you specified a quantity of 5 in the order item
-        self.assertEqual(response.data[0]['total'], "500.00")  # Since you specified a quantity of 5 in the order item
 
 
 

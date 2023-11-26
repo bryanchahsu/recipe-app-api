@@ -17,8 +17,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-# serializers.py
+## FOR THE LIST API VIEW
 from rest_framework import serializers
 from .models import Order
 from django.db import models
