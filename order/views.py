@@ -1,11 +1,21 @@
+
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10  # Number of items per page
+    page_size_query_param = 'page_size'  # Custom query parameter for changing page size
+    max_page_size = 50  # Maximum page size allowed
+
+
 from rest_framework import generics
 from .models import Order
 from .serializers import OrderListSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
+
 class OrderListAPIView(generics.ListAPIView):
-    queryset = Order.objects.all()
+    queryset = Order.objects.all().order_by('-order_date')
     serializer_class = OrderListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     # filterset_fields = {'order_date': ['gte', 'lte']}  # Date range filter
@@ -16,9 +26,9 @@ class OrderListAPIView(generics.ListAPIView):
         'tags__name': ['exact', 'in'],  # Allow exact match and list membership filter for tags
 
     }
-
-
     ordering_fields = '__all__'  # Allow sorting by any valid field
+    pagination_class = CustomPageNumberPagination  # Set the pagination class
+    
 
 
 

@@ -1,3 +1,96 @@
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from datetime import datetime
+from django.urls import reverse
+from .models import Order
+from .serializers import OrderSerializer, OrderListSerializer
+
+
+
+class OrderPaginationTestCase(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer")
+
+        # Create a product
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with order items
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        # Create 30  additional sample orders with order items
+        for i in range(2, 30):  
+            order_date = datetime(2023, 11, i, 12, 0, 0)
+            order = Order.objects.create(
+                customer=self.customer,
+                order_date=order_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                fulfillment_status="Shipped" if i % 2 == 0 else "Delivered",
+                total=f"{i * 100.00}",
+            )
+            OrderItem.objects.create(
+                order=order,
+                product=self.product,
+                quantity=i,  # Specify the quantity of this product in the order
+            )
+
+    def test_default_pagination(self):
+        # Test default pagination settings
+        response = self.client.get(reverse("order-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check that only the first page (default page size) is returned
+        self.assertEqual(len(response.data['results']), 10)  # Assuming default page size is 10
+
+
+    def test_custom_page_size(self):
+        # Test custom page size
+        response = self.client.get(reverse("order-list"), {"page_size": 5})  # Set a custom page size of 5
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 5)  # Check that only 5 results are returned
+
+
+    def test_pagination_next_page(self):
+        # Test navigating to the next page
+        response = self.client.get(reverse("order-list"), {"page": 2})  # Request the second page
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check that the second page is returned
+        self.assertEqual(len(response.data['results']), 10)
+
+        next_url = response.data['next']
+        if next_url:
+            page_number = int(next_url.split('page=')[1]) - 1
+        else:
+            # If 'next' is None, it means you are on the last page
+            page_number = None
+        self.assertEqual(page_number, 2)  # Verify the page number
+        
 
 
 #Test for Sort, Filter, etc
@@ -71,27 +164,33 @@ class OrderAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         filtered_orders = Order.objects.filter(order_date__gte=start_date, order_date__lte=end_date)
         serializer = OrderListSerializer(filtered_orders, many=True)
-        self.assertEqual(response.data, serializer.data)
+
+        # Sort the data lists based on the 'id' key before making the assertion
+        sorted_response_data = sorted(response.data['results'], key=lambda x: x['id'])
+        sorted_serializer_data = sorted(serializer.data, key=lambda x: x['id'])
+
+        # Now, assert that the sorted data lists are equal
+        self.assertEqual(sorted_response_data, sorted_serializer_data)
+
+        # self.assertEqual(response.data['results'], serializer.data)
 
     def test_sorting(self):
         # Test sorting orders by order_date in descending order
         response = self.client.get(reverse("order-list"), {"ordering": "-order_date"})
 
-                # Debugging statements
-        print("Response Content:")
-        print(response.content)
-        print("Response Status Code:", response.status_code)
+        #         # Debugging statements
+        # print("Response Content:")
+        # print(response.content)
+        # print("Response Status Code:", response.status_code)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         sorted_orders = Order.objects.order_by("-order_date")
         serializer = OrderListSerializer(sorted_orders, many=True)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
 
     def test_invalid_date_filtering(self):
         # Test filtering with invalid date format (should return an empty list)
         response = self.client.get(reverse("order-list"), {"order_date__gte": "invalid_date"})
-        print("response")
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # def test_invalid_sorting_field(self):
@@ -111,7 +210,11 @@ class OrderAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         filtered_orders = Order.objects.filter(fulfillment_status=fulfillment_status)
         serializer = OrderListSerializer(filtered_orders, many=True)
-        self.assertEqual(response.data, serializer.data)
+        sorted_response_data = sorted(response.data['results'], key=lambda x: x['id'])
+        sorted_serializer_data = sorted(serializer.data, key=lambda x: x['id'])
+
+        # Now, assert that the sorted data lists are equal
+        self.assertEqual(sorted_response_data, sorted_serializer_data)
 
 
     def test_combined_filtering(self):
@@ -131,7 +234,12 @@ class OrderAPITestCase(TestCase):
             fulfillment_status=fulfillment_status,
         )
         serializer = OrderListSerializer(filtered_orders, many=True)
-        self.assertEqual(response.data, serializer.data)
+        print(response.data['results'])
+
+        print("serializer data")
+        print(serializer.data)
+
+        self.assertEqual(response.data['results'], serializer.data)
 
 
 
@@ -207,7 +315,7 @@ class OrderListAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         # Check if the JSON response contains the orders and total_quantity
-        self.assertEqual(len(response.data), 1)  # Assuming you have 1 order in the setup
+        self.assertEqual(response.data['count'], 1)  # Assuming you have 1 order in the setup
         self.assertEqual(response.data[0]['id'], self.order.id)
         self.assertEqual(response.data[0]['total_quantity'], 10)  # Since you specified a quantity of 5 in the order item
         self.assertEqual(response.data[0]['total'], "500.00")  # Since you specified a quantity of 5 in the order item
@@ -357,9 +465,10 @@ class OrderAPITest(TestCase):
 
         # Check if the response status code is 200 OK
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
 
         # Check if the response contains the expected number of orders (1 in this case)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['count'], 1)
 
         # You can add more assertions to check the data returned in the response
 
