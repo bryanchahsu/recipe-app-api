@@ -8,27 +8,17 @@ class OrderListAPIView(generics.ListAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = {'order_date': ['gte', 'lte']}  # Date range filter
+    # filterset_fields = {'order_date': ['gte', 'lte']}  # Date range filter
+    filterset_fields = {
+        'order_date': ['gte', 'lte'],  # Date range filter
+        'fulfillment_status': ['exact'],  # Exact match filter
+        # 'tags': ['exact', 'in'],  # Exact match and list membership filter
+        'tags__name': ['exact', 'in'],  # Allow exact match and list membership filter for tags
+
+    }
+
+
     ordering_fields = '__all__'  # Allow sorting by any valid field
-
-
-
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     ordering = self.request.query_params.get('ordering')
-    #     # Check if the ordering field is valid, if not, raise a validation error
-    #     if ordering and ordering not in self.ordering_fields:
-    #         raise ValidationError("Invalid sorting field")
-    #     return queryset.order_by(ordering)
-    
-
-
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     ordering = self.request.query_params.get('ordering')
-    #     # if ordering and ordering not in self.ordering_fields:
-    #     #     raise ValidationError("Invalid sorting field")
-    #     return queryset
 
 
 

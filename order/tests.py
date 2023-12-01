@@ -102,6 +102,54 @@ class OrderAPITestCase(TestCase):
     #     print(response.data)
     #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    #NEW TESTS FOR FILTERING AND SORTS
+
+    def test_order_status_filtering(self):
+        # Test filtering orders by fulfillment status
+        fulfillment_status = "Shipped"
+        response = self.client.get(reverse("order-list"), {"fulfillment_status": fulfillment_status})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        filtered_orders = Order.objects.filter(fulfillment_status=fulfillment_status)
+        serializer = OrderListSerializer(filtered_orders, many=True)
+        self.assertEqual(response.data, serializer.data)
+
+
+    def test_combined_filtering(self):
+        # Test combined filtering by date and fulfillment status
+        start_date = "2023-11-02"
+        end_date = "2023-11-04"
+        fulfillment_status = "Shipped"
+        response = self.client.get(reverse("order-list"), {
+            "order_date__gte": start_date,
+            "order_date__lte": end_date,
+            "fulfillment_status": fulfillment_status,
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        filtered_orders = Order.objects.filter(
+            order_date__gte=start_date,
+            order_date__lte=end_date,
+            fulfillment_status=fulfillment_status,
+        )
+        serializer = OrderListSerializer(filtered_orders, many=True)
+        self.assertEqual(response.data, serializer.data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -529,7 +577,6 @@ class OrderCreateViewTestCase(TestCase):
 
         # Make a POST request to create a new order
         response = self.client.post(url, self.order_data, format='json')
-        print(response.content)
 
 
         # Check the response status code (should be 201 Created)
