@@ -3,14 +3,21 @@
 # serializers.py
 from rest_framework import serializers
 from .models import Order, OrderItem
+from customer.serializers import CustomerSerializer
+from product.serializers import ProductSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
     class Meta:
         model = OrderItem
         fields = '__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)  # Include items as a nested field
+    customer = CustomerSerializer()  # Include customer information
+    # address= CustomerAddressSerializer()
+    # product= ProductSerializer()
+
 
     class Meta:
         model = Order
@@ -21,9 +28,14 @@ class OrderSerializer(serializers.ModelSerializer):
 from rest_framework import serializers
 from .models import Order
 from django.db import models
+from customer.serializers import CustomerSerializer  # Import the CustomerSerializer
+
 
 class OrderListSerializer(serializers.ModelSerializer):
     total_quantity = serializers.SerializerMethodField()
+    customer = CustomerSerializer()  # Use the CustomerSerializer for the customer field
+
+    
 
     class Meta:
         model = Order

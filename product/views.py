@@ -37,7 +37,7 @@ class ProductInventoryView(APIView):
 
         return JsonResponse({'products': inventory_data})
 
-class ProductDetailView(generics.RetrieveAPIView):
+class ProductDetailView(generics.RetrieveUpdateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 

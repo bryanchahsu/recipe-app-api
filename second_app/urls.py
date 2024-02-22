@@ -31,7 +31,7 @@ urlpatterns = [
     # ),
     path('api/user/', include('user.urls')),
     path('api/recipe/', include('recipe.urls')),
-    path('api/order/', include('order.urls')),
+    # path('api/order/', include('order.urls')),
     path('orders/', include('order.urls')),
     path('customers/', include('customer.urls')),
     path('products/', include('product.urls')),

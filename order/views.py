@@ -57,11 +57,14 @@ from rest_framework import generics
 from .models import Order
 from .serializers import OrderSerializer
 from rest_framework.permissions import IsAuthenticated  # Import the permission class
+from product.models import Product
+from product.serializers import ProductSerializer
 
-
-class OrderDetailView(generics.RetrieveAPIView):
+class OrderDetailView(generics.RetrieveUpdateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    # queryset = Product.objects.all()
+    # serializer_class = ProductSerializer
 
 class OrderCreateView(generics.CreateAPIView):
     serializer_class = OrderSerializer

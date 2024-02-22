@@ -3,7 +3,7 @@ from django.db.models import Sum  # Import the Sum function from django.db.model
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import CustomerSerializer
+from .serializers import CustomerSerializer, CustomerListSerializer
 from .models import Customer
 from rest_framework import generics
 
@@ -45,7 +45,7 @@ class CustomerListView(APIView):
             customers_data.append(customer_data)
 
         # Serialize the customers data using the CustomerSerializer
-        serializer = CustomerSerializer(customers_data, many=True)
+        serializer = CustomerListSerializer(customers_data, many=True)
 
         # Return serialized customer data as a JSON response
         return Response({"customers": serializer.data})

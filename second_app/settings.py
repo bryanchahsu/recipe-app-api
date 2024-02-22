@@ -33,13 +33,26 @@ DEBUG = True
 
 
 CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ALLOW_ALL_ORIGINS = True  # Allow requests from all origins (for development only)
+
 
 ALLOWED_HOSTS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
 
 #THIS REMOVES ALL AUTHENTICATION FOR THE APP, BUT MY VIEWS MAY OVERWRITE IT
 REST_FRAMEWORK = {

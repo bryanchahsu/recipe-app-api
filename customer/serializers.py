@@ -20,6 +20,8 @@ from order.models import Order
 class CustomerSerializer(serializers.ModelSerializer):
     total_orders = serializers.SerializerMethodField()
     total_amount_spent = serializers.SerializerMethodField()
+    # address= CustomerAddressSerializer(many=True, read_only=True)
+    address = CustomerAddressSerializer()  # Include the address field
 
     def get_total_orders(self, customer):
         if isinstance(customer, dict) and 'id' in customer:
@@ -41,4 +43,38 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent']
+        # fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent',
+        #         #   'address'
+        #           ]
+        fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent', 'address']  # Include the address field
+
+
+class CustomerListSerializer(serializers.ModelSerializer):
+    total_orders = serializers.SerializerMethodField()
+    total_amount_spent = serializers.SerializerMethodField()
+    # address= CustomerAddressSerializer(many=True, read_only=True)
+
+    def get_total_orders(self, customer):
+        if isinstance(customer, dict) and 'id' in customer:
+            customer_id = customer['id']
+            try:
+                customer = Customer.objects.get(pk=customer_id)
+            except Customer.DoesNotExist:
+                return 0
+        return customer.order_set.count()
+
+    def get_total_amount_spent(self, customer):
+        if isinstance(customer, dict) and 'id' in customer:
+            customer_id = customer['id']
+            try:
+                customer = Customer.objects.get(pk=customer_id)
+            except Customer.DoesNotExist:
+                return 0
+        return customer.order_set.aggregate(total_amount=Sum('total'))['total_amount'] or 0
+
+    class Meta:
+        model = Customer
+        # fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent',
+        #         #   'address'
+        #           ]
+        fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent']  # Include the address field
