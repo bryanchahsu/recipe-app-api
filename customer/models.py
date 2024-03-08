@@ -14,8 +14,10 @@ class Address(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
-    # address = models.OneToOneField(Address, on_delete=models.CASCADE)
     address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, default=None)
+
+    # address = models.OneToOneField(Address, on_delete=models.CASCADE)
+
 
     phone = models.CharField(max_length=20)
 

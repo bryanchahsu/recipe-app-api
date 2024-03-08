@@ -244,23 +244,6 @@ class OrderAPITestCase(TestCase):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Order List API Test- aggregate on quantity
 
 from django.test import TestCase
@@ -782,3 +765,222 @@ class OrderCreateViewTestCase(TestCase):
 
         # Check if the order was deleted from the database
         self.assertFalse(Order.objects.filter(id=order.id).exists())
+
+# from django.test import TestCase
+# from django.urls import reverse
+# from rest_framework import status
+# from rest_framework.test import APIClient
+# from .models import Customer, Order, OrderItem
+
+# class OrderPostAPITest(TestCase):
+#     def setUp(self):
+#         self.client = APIClient()
+#         self.customer = Customer.objects.create(name="Test Customer")
+#         self.product1 = Product.objects.create(title="Product 1", price=10.0, cost=5.0)
+#         self.product2 = Product.objects.create(title="Product 2", price=15.0, cost=7.5)
+
+#         self.order1 = Order.objects.create(
+#             customer=self.customer,
+#             order_date="2023-11-19T04:10:29Z",
+#             fulfillment_status="Fulfilled",
+#             total="9000.00",
+#         )
+#         self.order2 = Order.objects.create(
+#             customer=self.customer,
+#             order_date="2023-11-20T04:10:29Z",
+#             fulfillment_status="Processing",
+#             total="7500.00",
+#         )
+#         OrderItem.objects.create(order=self.order1, product=self.product1, quantity=2)
+#         OrderItem.objects.create(order=self.order2, product=self.product2, quantity=3)
+        
+#         self.tag1 = Tag.objects.create(name='Tag 1')
+#         self.tag2 = Tag.objects.create(name='Tag 2')
+
+#     # def test_create_order(self):
+#     #     url = reverse('order-create')
+#     #     data = {
+#     #         'customer': self.customer.id,
+#     #         'order_date': '2024-03-01T12:00:00Z',
+#     #         'fulfillment_status': 'Pending',
+#     #         'tags': [],
+#     #         'total': 50.00,
+#     #         'items': [
+#     #             {'product': self.product1.id, 'quantity': 2},
+#     #             {'product': self.product2.id, 'quantity': 1}
+#     #         ]
+#     #     }
+
+#     #     response = self.client.post(url, data, format='json')
+#     #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#     #     self.assertEqual(Order.objects.count(), 3)  # Adjust this based on your expectation
+#     #     self.assertEqual(OrderItem.objects.count(), 4)  # Adjust this based on your expectation
+        
+
+#     def test_create_order(self):
+#         url = reverse('order-create')
+        
+#         # Create the Address instance
+#         address_data = {
+#             'country': 'Country',
+#             'street': 'Street',
+#             'apartment_suite': 'Apartment or Suite',
+#             'city': 'City',
+#             'state': 'State',
+#             'zip_code': 'Zip Code'
+#         }
+#         address = Address.objects.create(**address_data)
+
+#         data = {
+#             'customer': {
+#                 'name': 'Test Customer',
+#                 'email': 'test@example.com',
+#                 'address': address.id  # Pass the ID of the Address instance
+#             },
+#             'order_date': '2024-03-01T12:00:00Z',
+#             'fulfillment_status': 'Pending',
+#             'tags': [self.tag1.pk],
+#             'total': 50.00,
+#             'items': [
+#                 {'product': self.product1.pk, 'quantity': 2},
+#                 {'product': self.product2.pk, 'quantity': 1}
+#             ]
+#         }
+
+#         response = self.client.post(url, data, format='json')
+#         print(response.content)  # Print out the response content
+#         print(response.status_code)  # Print out the response status code
+
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertEqual(Order.objects.count(), 1)
+#         self.assertEqual(OrderItem.objects.count(), 2)
+
+
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+from .models import Order
+from decimal import Decimal
+from .serializers import OrderItemSerializer
+
+class OrderCreateAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.customer = Customer.objects.create(name="Test Customer")
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with order items
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+    def test_products_and_customers_exist(self):
+        # Check if products exist
+        self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
+        # self.assertTrue(Product.objects.filter(pk=self.product2.pk).exists())
+
+        # Check if customer exists
+        self.assertTrue(Customer.objects.filter(pk=self.customer.pk).exists())
+
+
+    def test_order_serializer(self):
+        # Prepare order data
+        # order_data = {
+        #     'customer': self.customer,
+        #     'order_date': '2024-03-01T12:00:00Z',
+        #     'fulfillment_status': 'Pending',
+        #     'tags': [],
+        #     'total': '50.00',
+        # }
+
+        customer_instance = Customer.objects.create(name="Test Customer", email="test_customer@example.com")
+
+        order_data_revised = {
+            'customer': customer_instance,
+            'order_date': '2024-03-01T12:00:00Z',
+            'fulfillment_status': 'Pending',
+            'tags': [],
+            'total': '50.00',
+            'items':[
+                {'order': 1, 'product': self.product.id, 'quantity': 2},
+                # {'order': 1, 'product': self.product.id, 'quantity': 1}
+            ]
+        }
+        # Create order serializer
+        order_serializer = OrderSerializer(data=order_data_revised)
+        
+        if order_serializer.is_valid():
+            # Save the order
+            order_instance = order_serializer.save()
+
+            # Obtain the ID of the created order
+            order_id = order_instance.id
+
+        #     # Prepare order items data with order_id included
+        #     order_items_data = [
+        #         {'order': order_id, 'product': self.product1.id, 'quantity': 2},
+        #         {'order': order_id, 'product': self.product2.id, 'quantity': 1}
+        #     ]
+
+        #     # Combine order data and order items data
+        #     combined_data = {**order_data, 'items': order_items_data}
+
+        #     # Create order item serializer with combined data
+        #     order_item_serializer = OrderSerializer(data=combined_data)
+        #     if order_item_serializer.is_valid():
+        #         # Save the order with items
+        #         order_item_serializer.save()
+        #     else:
+        #         # Handle order item serializer errors
+        #         print(order_item_serializer.errors)
+        # else:
+        #     # Handle order serializer errors
+        #     print(order_serializer.errors)
+
+    # def test_create_order(self):
+    #     url = reverse('order-create')
+    #     data = {
+    #         'customer': self.customer.id,
+    #         'order_date': '2024-03-01T12:00:00Z',
+    #         'fulfillment_status': 'Pending',
+    #         'tags': [],
+    #         'total': '50.00',
+    #         'items': [
+    #             {'product': self.product1.id, 'quantity': 2},
+    #             {'product': self.product2.id, 'quantity': 1}
+    #         ]
+    #     }
+
+    #     response = self.client.post(url, data, format='json')
+    #     print(response.content)
+
+    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    #     self.assertEqual(Order.objects.count(), 1)  # Check if an order was created
+
+    #     # Optionally, check the response data to ensure correctness
+    #     order_data = response.data
+    #     self.assertEqual(order_data['customer'], self.customer.id)
+    #     # Check other fields as well...
+        

@@ -115,8 +115,45 @@ class CustomerUpdateView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# views.py
+from rest_framework import generics  # Import generics module
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import Customer
+from .serializers import CustomerCreateSerializer
+
+class CustomerCreateAPIView(APIView):
+    def post(self, request):
+        serializer = CustomerCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# class CustomerCreateAPIView(generics.CreateAPIView):
+
+#     queryset = Customer.objects.all()
+#     serializer_class = CustomerCreateSerializer
+    
+    # serializer_class = CustomerListSerializer
 
 
+    # def post(self, request, format=None):
+        # try:
+        #     serializer = CustomerCreateSerializer(data=request.data)
+        #     if serializer.is_valid():
+        #         serializer.save()
+        #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # except Exception as e:
+        #     logger.error(f"Error occurred during customer creation: {e}")
+        #     return Response("An error occurred during customer creation", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# class ProductCreateView(generics.CreateAPIView):
+#     queryset = Product.objects.all()
+            
 from rest_framework.generics import DestroyAPIView
 from .models import Customer
 from .serializers import CustomerSerializer

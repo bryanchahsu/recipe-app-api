@@ -40,6 +40,21 @@ class CustomerSerializer(serializers.ModelSerializer):
             except Customer.DoesNotExist:
                 return 0
         return customer.order_set.aggregate(total_amount=Sum('total'))['total_amount'] or 0
+    
+
+    def _get_customer_id(self, customer):
+        if isinstance(customer, int):
+            return customer
+        elif isinstance(customer, dict) and 'id' in customer:
+            return customer['id']
+        return None
+    
+    # def create(self, validated_data):
+    #     address_data = validated_data.pop('address')
+    #     address = Address.objects.create(**address_data)
+    #     customer = Customer.objects.create(address=address, **validated_data)
+    #     return customer
+        
 
     class Meta:
         model = Customer
@@ -78,3 +93,43 @@ class CustomerListSerializer(serializers.ModelSerializer):
         #         #   'address'
         #           ]
         fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent']  # Include the address field
+
+
+        
+# serializers.py
+        
+from rest_framework import serializers
+from .models import Customer, Address
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ('country', 'street', 'apartment_suite', 'city', 'state', 'zip_code')
+
+class CustomerCreateSerializer(serializers.ModelSerializer):
+    address = AddressSerializer()
+
+    class Meta:
+        model = Customer
+        fields = ('name', 'email', 'address', 'phone')
+
+    def create(self, validated_data):
+        address_data = validated_data.pop('address')
+        address = Address.objects.create(**address_data)
+        customer = Customer.objects.create(address=address, **validated_data)
+        return customer
+
+
+
+    # def create(self, validated_data):
+    #     try:
+    #         address_data = validated_data.pop('address')
+    #         address_serializer = AddressSerializer(data=address_data)
+    #         if address_serializer.is_valid():
+    #             address = address_serializer.save()
+    #             customer = Customer.objects.create(address=address, **validated_data)
+    #             return customer
+    #         else:
+    #             raise serializers.ValidationError(address_serializer.errors)
+    #     except Exception as e:
+    #         raise serializers.ValidationError(f"Error occurred during customer creation: {e}")

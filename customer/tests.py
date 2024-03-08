@@ -323,3 +323,172 @@ class CustomerDeleteViewTest(APITestCase):
         # Try to retrieve the deleted customer from the database
         with self.assertRaises(Customer.DoesNotExist):
             deleted_customer = Customer.objects.get(id=self.customer.id)
+
+
+# from django.test import TestCase
+# from django.urls import reverse
+# from rest_framework.test import APIClient
+# from rest_framework import status
+# from .models import Customer, Address
+# from .serializers import CustomerSerializer, AddressSerializer
+
+# class CustomerAPITestCase(TestCase):
+#     def setUp(self):
+#         self.client = APIClient()
+
+#         # Create a sample address data
+#         self.address_data = {
+#             "country": "Country",
+#             "street": "Street",
+#             "apartment_suite": "Apartment or Suite",
+#             "city": "City",
+#             "state": "State",
+#             "zip_code": "Zip Code"
+#         }
+
+#         # Create a sample customer data
+#         self.customer_data = {
+#             "name": "John Doe",
+#             "email": "john.doe@example.com",
+#             "phone": "123-456-7890"
+#         }
+
+#         # Create a new address
+#         self.address = Address.objects.create(**self.address_data)
+
+#         # Update the customer data with the new address ID
+#         self.customer_data["address"] = self.address.id
+
+#         # Create a sample customer using the updated data
+#         self.customer = Customer.objects.create(**self.customer_data)
+
+#         # Define the updated data for the put request
+#         self.update_data = {
+#             "name": "Updated Name",
+#             "email": "updated.email@example.com",
+#             "phone": "987-654-3210"
+#         }
+# def test_update_customer_info(self):
+#     # Create a new address for the update
+#     new_address_data = {
+#         "country": "New Country",
+#         "street": "New Street",
+#         "apartment_suite": "New Apartment or Suite",
+#         "city": "New City",
+#         "state": "New State",
+#         "zip_code": "New Zip Code"
+#     }
+#     new_address = Address.objects.create(**new_address_data)
+
+#     # Update the customer data with the new address instance for the update
+#     self.update_data["address"] = new_address  # Pass the Address instance
+
+#     # Send a put request to update the customer info
+#     url = reverse('customer-detail', kwargs={'pk': self.customer.id})
+#     response = self.client.put(url, self.update_data, format='json')
+
+#     # Assert the response status code
+#     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+#     # Check if the customer data has been updated
+#     updated_customer = Customer.objects.get(id=self.customer.id)
+#     self.assertEqual(updated_customer.name, self.update_data['name'])
+#     self.assertEqual(updated_customer.email, self.update_data['email'])
+#     self.assertEqual(updated_customer.phone, self.update_data['phone'])
+
+#     # Check if the address data has been updated
+#     updated_address = Address.objects.get(id=new_address.id)
+#     self.assertEqual(updated_address.country, new_address_data['country'])
+#     self.assertEqual(updated_address.street, new_address_data['street'])
+#     self.assertEqual(updated_address.apartment_suite, new_address_data['apartment_suite'])
+#     self.assertEqual(updated_address.city, new_address_data['city'])
+#     self.assertEqual(updated_address.state, new_address_data['state'])
+#     self.assertEqual(updated_address.zip_code, new_address_data['zip_code'])
+
+#     # Optional: Check the response data
+#     self.assertEqual(response.data['name'], self.update_data['name'])
+#     self.assertEqual(response.data['email'], self.update_data['email'])
+#     self.assertEqual(response.data['phone'], self.update_data['phone'])
+#     self.assertEqual(response.data['address'], new_address.id)
+
+#     # You can add more assertions as needed
+
+# from django.test import TestCase
+# from django.urls import reverse
+# from rest_framework import status
+# from rest_framework.test import APIClient
+
+# class CustomerCreateTest(TestCase):
+#     def setUp(self):
+#         self.client = APIClient()
+
+#     def test_create_customer_with_null_address(self):
+#         customer_data = {
+#             "name": "John Doe",
+#             "email": "john.doe@example.com",
+#             "address": None,
+#             "phone": "123-456-7890"
+#         }
+
+#         url = reverse('customer-create')  # Assuming your URL pattern name is 'customer-create'
+#         response = self.client.post(url, customer_data, format='json')
+
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            
+
+
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+import json
+
+class CustomerAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_create_customer(self):
+        # Define the customer data to be sent in the POST request
+        customer_data = {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "address": {
+                "country": "United States",
+                "street": "123 Main St",
+                "apartment_suite": "Apt 101",
+                "city": "Anytown",
+                "state": "CA",
+                "zip_code": "12345"
+            },
+            "phone": "123-456-7890"
+        }
+
+        # Send a POST request to the API endpoint to create a new customer
+        response = self.client.post('/customers/new', json.dumps(customer_data), content_type='application/json')
+
+        # Check if the response status code is 201 Created
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check if the response data matches the expected customer data
+        self.assertEqual(response.data['name'], customer_data['name'])
+        self.assertEqual(response.data['email'], customer_data['email'])
+        self.assertEqual(response.data['address']['country'], customer_data['address']['country'])
+        self.assertEqual(response.data['address']['street'], customer_data['address']['street'])
+        self.assertEqual(response.data['address']['apartment_suite'], customer_data['address']['apartment_suite'])
+        self.assertEqual(response.data['address']['city'], customer_data['address']['city'])
+        self.assertEqual(response.data['address']['state'], customer_data['address']['state'])
+        self.assertEqual(response.data['address']['zip_code'], customer_data['address']['zip_code'])
+        self.assertEqual(response.data['phone'], customer_data['phone'])
+
+
+    def test_create_customer_invalid_data(self):
+        # Define invalid customer data (missing required fields)
+        invalid_customer_data = {
+            "email": "john.doe@example.com",
+            "phone": "123-456-7890"
+        }
+
+        # Send a POST request to the API endpoint with invalid data
+        response = self.client.post('/customers/new', json.dumps(invalid_customer_data), content_type='application/json')
+
+        # Check if the response status code is 400 Bad Request
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

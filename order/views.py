@@ -66,10 +66,53 @@ class OrderDetailView(generics.RetrieveUpdateAPIView):
     # queryset = Product.objects.all()
     # serializer_class = ProductSerializer
 
-class OrderCreateView(generics.CreateAPIView):
-    serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can create orders
- 
+# class OrderCreateView(generics.CreateAPIView):
+#     serializer_class = OrderSerializer
+#     # permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can create orders
+    
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import OrderSerializer
+
+
+class OrderCreateView(APIView):
+    # def post(self, request):
+    #     serializer = OrderSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         # Automatically assign the customer based on the request user or any other logic
+    #         request.data['customer'] = request.user.customer.id  # Assuming you have a user-customer relationship
+            
+    #         # Create the order without saving it to the database yet
+    #         order = serializer.save()
+
+    #         # Get the ID of the created order
+    #         order_id = order.id
+            
+    #         # Ensure order items have the correct order ID
+    #         order_items = request.data.get('items', [])
+    #         for item_data in order_items:
+    #             item_data['order'] = order_id  # Assign the order ID to each order item
+
+    #         # Create a serializer instance for the order with the updated data
+    #         serializer_with_items = OrderSerializer(instance=order, data=request.data)
+
+    #         if serializer_with_items.is_valid():
+    #             serializer_with_items.save()  # Save the order with the updated order items
+    #             return Response(serializer_with_items.data, status=status.HTTP_201_CREATED)
+    #         else:
+    #             order.delete()  # Rollback the creation of the order
+    #             return Response(serializer_with_items.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, format=None):
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class OrderUpdateView(generics.UpdateAPIView):
     queryset = Order.objects.all()
