@@ -73,7 +73,7 @@ class OrderDetailView(generics.RetrieveUpdateAPIView):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import OrderSerializer
+from .serializers import OrderCreateSerializer
 
 
 class OrderCreateView(APIView):
@@ -84,7 +84,7 @@ class OrderCreateView(APIView):
     #         request.data['customer'] = request.user.customer.id  # Assuming you have a user-customer relationship
             
     #         # Create the order without saving it to the database yet
-    #         order = serializer.save()
+    #         order = serializer.save() sd                                                                      xc
 
     #         # Get the ID of the created order
     #         order_id = order.id
@@ -107,7 +107,7 @@ class OrderCreateView(APIView):
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, format=None):
-        serializer = OrderSerializer(data=request.data)
+        serializer = OrderCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

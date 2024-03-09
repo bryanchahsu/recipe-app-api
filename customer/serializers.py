@@ -6,7 +6,9 @@ from django.db.models import Sum
 class CustomerAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ['country', 'street', 'apartment_suite', 'city', 'state', 'zip_code']
+
 
 # class CustomerSerializer(serializers.ModelSerializer):
 #     address = CustomerAddressSerializer(many=True, read_only=True)  # Include items as a nested field
@@ -21,6 +23,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     total_orders = serializers.SerializerMethodField()
     total_amount_spent = serializers.SerializerMethodField()
     # address= CustomerAddressSerializer(many=True, read_only=True)
+
     address = CustomerAddressSerializer()  # Include the address field
 
     def get_total_orders(self, customer):
@@ -49,19 +52,23 @@ class CustomerSerializer(serializers.ModelSerializer):
             return customer['id']
         return None
     
-    # def create(self, validated_data):
-    #     address_data = validated_data.pop('address')
-    #     address = Address.objects.create(**address_data)
-    #     customer = Customer.objects.create(address=address, **validated_data)
-    #     return customer
-        
+    def create(self, validated_data):
+        address_data = validated_data.pop('address')  # Extract address data
+        address_serializer = CustomerAddressSerializer(data=address_data)
+        if address_serializer.is_valid():
+            address = address_serializer.save()  # Save the address instance
+        else:
+            raise serializers.ValidationError(address_serializer.errors)
+
+        customer = Customer.objects.create(address=address, **validated_data)
+        return customer
 
     class Meta:
         model = Customer
         # fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent',
         #         #   'address'
         #           ]
-        fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent', 'address']  # Include the address field
+        fields = ['id', 'name', 'email', 'total_orders', 'total_amount_spent', 'address', 'phone']  # Include the address field
 
 
 class CustomerListSerializer(serializers.ModelSerializer):

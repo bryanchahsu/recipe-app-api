@@ -984,3 +984,134 @@ class OrderCreateAPITest(TestCase):
     #     self.assertEqual(order_data['customer'], self.customer.id)
     #     # Check other fields as well...
         
+
+
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+
+class OrderCreateReviseAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+                
+        self.customer = Customer.objects.create(name="Test Customer")
+        
+        self.product = Product.objects.create(
+            title="Test Product",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0,
+        )
+
+        # Create an order with order items
+        self.order = Order.objects.create(
+            customer=self.customer,
+            order_date="2023-11-21T04:10:29Z",
+            fulfillment_status="Pending",
+            total="500.00",
+        )
+
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+        self.order_item1 = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=5,  # Specify the quantity of this product in the order
+        )
+
+
+                
+        
+        
+
+        # Define sample data for the order
+        self.data = {
+            "customer": {
+                "name": "John Doe",
+                "email": "johndoe@example.com",
+                "address": {
+                    "country": "USA",
+                    "street": "123 Main St",
+                    "apartment_suite": "Apt 101",
+                    "city": "New York",
+                    "state": "NY",
+                    "zip_code": "10001"
+                }
+            },
+            "order_date": "2024-03-07T12:00:00Z",
+            "fulfillment_status": "Pending",
+            "tags": [{"name": "Tag1"}],
+            "total": "100.00",
+            "items": [
+                {"order":1, "product": 1, "quantity": 2},
+                # {"product": 2, "quantity": 1}
+            ]
+        }
+
+    def test_create_order(self):
+        url = reverse('order-create')
+        response = self.client.post(url, self.data, format='json')
+        print(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from .models import Order
+from customer.models import Customer  # Import the Customer model
+from product.models import Product  # Import the Product model
+
+class OrderCreateRevise2APITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        # Create a customer
+        self.customer = Customer.objects.create(name="Test Customer", email="test@example.com")
+
+        # Create some products
+        self.product1 = Product.objects.create(            
+            title="Test Product2",
+            description="Product description",
+            price=10.0,
+            sku="SKU123",
+            quantity=100,
+            cost=5.0)
+        self.product2 = Product.objects.create(            
+            title="Test Product1",
+            description="Product descript3232ion",
+            price=10.0,
+            sku="SKU12345",
+            quantity=100,
+            cost=5.0)
+        
+        self.tag = Tag.objects.create(name="Tag1")
+
+    def test_create_order(self):
+        data = {
+            "customer": 1,
+            "order_date": "2024-03-07T12:00:00Z",
+            "fulfillment_status": "Pending",
+            "tags": [{"name":1}],
+            "total": "100.00",
+            "items": [
+                {"order": 3, "product": 1, "quantity": 2},
+                {"order": 3, "product": 2, "quantity": 3}
+            ]
+        }
+
+        url = reverse('order-create')
+
+        response = self.client.post(url, data, format='json')
+        print(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Order.objects.count(), 1)
