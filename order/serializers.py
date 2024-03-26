@@ -30,16 +30,29 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+# class OrderItemSerializer(serializers.ModelSerializer):
+#     product = ProductSerializer()
+
+#     class Meta:
+#         model = OrderItem
+#         # fields = '__all__'
+#         # fields = ['id', 'order', 'product', 'quantity']
+#         fields = ['product', 'quantity']
+
 class OrderItemSerializer(serializers.ModelSerializer):
-    # product = ProductSerializer()
-    # product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())  # Change here
+    product = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        # fields = '__all__'
-        # fields = ['id', 'order', 'product', 'quantity']
         fields = ['product', 'quantity']
 
+    def get_product(self, obj):
+        if isinstance(obj.product, int):
+            # If the product is already a primary key, return it directly
+            return obj.product
+        else:
+            # If the product is an object, return its serialized representation
+            return ProductSerializer(obj.product).data
 
 
 
@@ -74,9 +87,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     
 class OrderSerializer(serializers.ModelSerializer):
-    # customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     customer = CustomerSerializer()
-    # customer = CustomerField(queryset=Customer.objects.all())
+
 
     tags = TagSerializer(many=True)
     items = OrderItemSerializer(many=True)

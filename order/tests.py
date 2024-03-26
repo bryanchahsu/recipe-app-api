@@ -1107,6 +1107,18 @@ class OrderCreateRevise2APITest(TestCase):
                 {"order": 3, "product": 2, "quantity": 3}
             ]
         }
+        
+        # data = {
+        #     "customer": 1,
+        #     "order_date": "2024-03-07T12:00:00Z",
+        #     "fulfillment_status": "Pending",
+        #     "tags": [{"name": "Tag1"}],
+        #     "total": "100.00",
+        #     "items": [
+        #         {"order": 3, "product": {"id": 1}, "quantity": 2},  # Provide product details as a dictionary
+        #         {"order": 3, "product": {"id": 2}, "quantity": 3}   # Provide product details as a dictionary
+        #     ]
+        # }
 
         url = reverse('order-create')
 

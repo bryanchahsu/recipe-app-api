@@ -27,6 +27,8 @@ class OrderListAPIView(generics.ListAPIView):
 
     }
     ordering_fields = '__all__'  # Allow sorting by any valid field
+    ordering = 'id'  # Sort by id
+
     pagination_class = CustomPageNumberPagination  # Set the pagination class
     
 

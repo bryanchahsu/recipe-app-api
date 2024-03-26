@@ -50,50 +50,67 @@ class CustomerListView(APIView):
         # Return serialized customer data as a JSON response
         return Response({"customers": serializer.data})
     
-
-
-from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 from .models import Customer
 from .serializers import CustomerSerializer
-from django.db.models import Sum
-from rest_framework import generics
 
 class CustomerDetailView(APIView):
     def get(self, request, customer_id, *args, **kwargs):
-        try:
-            # Retrieve the customer from the database based on the customer_id
-            customer = Customer.objects.get(pk=customer_id)
-        except Customer.DoesNotExist:
-            # If the customer doesn't exist, return a 404 response
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        # Get all orders related to the current customer
-        orders = customer.order_set.all()
-
-        # Calculate the total number of orders for the customer
-        total_orders = orders.count()
-
-        # Calculate the total amount spent by the customer
-        total_amount_spent = orders.aggregate(Sum('total'))['total__sum']
-        if total_amount_spent is None:
-            total_amount_spent = 0
-
+        # Retrieve the customer from the database or return 404 if not found
+        customer = get_object_or_404(Customer, pk=customer_id)
+        
         # Serialize the customer data
-        customer_data = {
-            'id': customer.id,
-            'name': customer.name,
-            'email': customer.email,
-            'total_orders': total_orders,
-            'total_amount_spent': total_amount_spent,
-        }
-
-        # Serialize the customer data using the CustomerSerializer
-        serializer = CustomerSerializer(customer_data)
-
+        serializer = CustomerSerializer(customer)
+        
         # Return serialized customer data as a JSON response
         return Response(serializer.data)
+
+
+# from django.shortcuts import get_object_or_404
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from .models import Customer
+# from .serializers import CustomerSerializer
+# from django.db.models import Sum
+# from rest_framework import generics
+
+# class CustomerDetailView(APIView):
+#     def get(self, request, customer_id, *args, **kwargs):
+#         try:
+#             # Retrieve the customer from the database based on the customer_id
+#             customer = Customer.objects.get(pk=customer_id)
+#         except Customer.DoesNotExist:
+#             # If the customer doesn't exist, return a 404 response
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+
+#         # Get all orders related to the current customer
+#         orders = customer.order_set.all()
+
+#         # Calculate the total number of orders for the customer
+#         total_orders = orders.count()
+
+#         # Calculate the total amount spent by the customer
+#         total_amount_spent = orders.aggregate(Sum('total'))['total__sum']
+#         if total_amount_spent is None:
+#             total_amount_spent = 0
+
+#         # Serialize the customer data
+#         customer_data = {
+#             'id': customer.id,
+#             'name': customer.name,
+#             'email': customer.email,
+#             'total_orders': total_orders,
+#             'total_amount_spent': total_amount_spent,
+#         }
+
+#         # Serialize the customer data using the CustomerSerializer
+#         serializer = CustomerSerializer(customer_data)
+
+#         # Return serialized customer data as a JSON response
+#         return Response(serializer.data)
     
 from rest_framework import status
 from rest_framework.views import APIView

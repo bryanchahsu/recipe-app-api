@@ -5,7 +5,7 @@ from .views import CustomerListView, CustomerDetailView, CustomerUpdateView, Cus
 
 urlpatterns = [
     path('', CustomerListView.as_view(), name='customer-list'),
-    path('customer/<int:customer_id>/', CustomerDetailView.as_view(), name='customer-detail'),
+    path('<int:customer_id>/', CustomerDetailView.as_view(), name='customer-detail'),
     path('customers/<int:customer_id>/update/', CustomerUpdateView.as_view(), name='customer-update'),
     path('new', CustomerCreateAPIView.as_view(), name='customer-create'),
     path('customer/<int:pk>/delete/', CustomerDeleteView.as_view(), name='customer-delete')
